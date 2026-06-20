@@ -4,8 +4,11 @@
 // All non-static requests are rewritten here (see vercel.json). We convert the
 // incoming Node request into a Web `Request`, call the SSR handler's `fetch`,
 // then stream the Web `Response` back through the Node response.
-
-export const config = { runtime: "nodejs20.x" };
+//
+// NOTE: No `export const config = { runtime }` here. Plain Vercel functions in
+// /api use the Node.js runtime by default; the Node version is pinned via the
+// "engines" field in package.json. The inline `runtime` field only accepts
+// Edge-style values and rejects "nodejs20.x".
 
 let handlerPromise;
 
