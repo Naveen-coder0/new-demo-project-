@@ -3,7 +3,7 @@ import { Sparkles, Clock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { getLatestProducts } from "@/lib/product.functions";
-import { ProductCardSkeleton } from "@/components/ui/Skeleton";
+import { ProductCardSkeleton } from "@/components/ui/skeleton";
 
 type FreshProduct = {
   id: string;
