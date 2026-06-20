@@ -73,7 +73,22 @@ export default function RoleSelectModal() {
         data: {
           firebaseUid: firebaseUser.uid,
           role: selected,
+          name: `${firstName} ${lastName}`.trim() || undefined,
           phone: phone || undefined,
+          address: address || undefined,
+          city: city || undefined,
+          state: state || undefined,
+          pincode: pincode || undefined,
+          // Shop owner
+          shopName: selected === "SHOP_OWNER" ? shopName || undefined : undefined,
+          shopType: selected === "SHOP_OWNER" ? shopType || undefined : undefined,
+          gstAvailable: selected === "SHOP_OWNER" ? gstAvailable : undefined,
+          gstNumber: selected === "SHOP_OWNER" && gstAvailable ? gstNumber || undefined : undefined,
+          // Delivery
+          vehicleType: selected === "DELIVERY" ? vehicleType || undefined : undefined,
+          vehicleNumber: selected === "DELIVERY" ? vehicleNumber || undefined : undefined,
+          aadhaar: selected === "DELIVERY" ? aadhaar || undefined : undefined,
+          license: selected === "DELIVERY" ? license || undefined : undefined,
         },
       });
       await refresh();
@@ -206,7 +221,14 @@ export default function RoleSelectModal() {
 
             <button
               onClick={submit}
-              disabled={saving || !firstName || !phone || !pincode}
+              disabled={
+                saving ||
+                !firstName ||
+                !phone ||
+                !pincode ||
+                (selected === "SHOP_OWNER" && (!shopName || !shopType)) ||
+                (selected === "DELIVERY" && (!vehicleType || !vehicleNumber || !aadhaar || !license))
+              }
               className="w-full mt-5 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary-glow transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {saving ? "Setting up…" : selected === "USER" ? "Complete Profile" : "Submit & Continue"}
