@@ -1,0 +1,11 @@
+{
+  "framework": null,
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "dist/client",
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "dist/server/**"
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+}

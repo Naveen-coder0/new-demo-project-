@@ -7,6 +7,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "vercel-build": "prisma generate && DEPLOY_TARGET=vercel vite build",
+    "postinstall": "prisma generate",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
