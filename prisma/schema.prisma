@@ -1,0 +1,360 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SHOP_OWNER
+  DELIVERY
+}
+
+enum ShopStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProductStatus {
+  ACTIVE
+  OUT_OF_STOCK
+  HIDDEN
+}
+
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  PACKED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentType {
+  ORDER
+  SHOP_REGISTRATION
+  DELIVERY_VERIFICATION
+}
+
+enum DeliveryStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+// ==================== USERS ====================
+
+model User {
+  id          String   @id @default(cuid())
+  firebaseUid String   @unique
+  name        String?
+  email       String   @unique
+  image       String?
+  phone       String?
+  role        Role     @default(USER)
+  onboarded   Boolean  @default(false)
+  blocked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shops         Shop[]
+  orders        Order[]        @relation("CustomerOrders")
+  deliveries    Order[]        @relation("DeliveryOrders")
+  addresses     Address[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  reviews       Review[]
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  state     String?
+  pincode   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ==================== CART ====================
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  size      String?
+  color     String?
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId, size, color])
+}
+
+// ==================== WISHLIST ====================
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+// ==================== SHOPS ====================
+
+model Shop {
+  id            String     @id @default(cuid())
+  name          String
+  ownerId       String
+  owner         User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  category      String
+  description   String?
+  image         String?
+  banner        String?
+  rating        Float      @default(0)
+  status        ShopStatus @default(PENDING)
+  ownerName     String?
+  shopAddress   String?
+  shopType      String?
+  mobile        String?
+  gstAvailable  Boolean    @default(false)
+  gstNumber     String?
+  regFeePaid    Boolean    @default(false)
+  tagline       String?
+  contactEmail  String?
+  whatsapp      String?
+  instagram     String?
+  freeShipAbove Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  products  Product[]
+  orders    Order[]
+  cartItems CartItem[]
+}
+
+// ==================== PRODUCTS ====================
+
+model Product {
+  id            String        @id @default(cuid())
+  shopId        String
+  shop          Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  price         Int
+  comparePrice  Int?
+  discount      Int?          @default(0)
+  sku           String?
+  images        String[]
+  image         String?
+  category      String
+  stock         Int           @default(0)
+  sizes         String[]
+  colors        String[]
+  tags          String[]
+  variants      Json?
+  tryAndBuy     Boolean       @default(false)
+  status        ProductStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  reviews       Review[]
+}
+
+// ==================== ORDERS ====================
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique @default(cuid())
+  userId          String
+  user            User          @relation("CustomerOrders", fields: [userId], references: [id])
+  shopId          String
+  shop            Shop          @relation(fields: [shopId], references: [id])
+  deliveryId      String?
+  deliveryPartner User?         @relation("DeliveryOrders", fields: [deliveryId], references: [id])
+  subtotal        Int
+  deliveryFee     Int           @default(0)
+  discount        Int           @default(0)
+  total           Int
+  status          OrderStatus   @default(PLACED)
+  paymentMethod   String
+  paymentStatus   PaymentStatus @default(PENDING)
+  razorpayOrderId String?
+  razorpayPayId   String?
+  deliveryName    String
+  deliveryPhone   String
+  deliveryAddress String
+  deliveryCity    String
+  deliveryState   String?
+  deliveryPincode String
+  notes           String?
+  cancelReason    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  items    OrderItem[]
+  payments Payment[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  image     String?
+  price     Int
+  quantity  Int
+  size      String?
+  color     String?
+}
+
+// ==================== PAYMENTS ====================
+
+model Payment {
+  id              String        @id @default(cuid())
+  orderId         String?
+  order           Order?        @relation(fields: [orderId], references: [id])
+  type            PaymentType
+  amount          Int
+  currency        String        @default("INR")
+  status          PaymentStatus @default(PENDING)
+  method          String?
+  razorpayOrderId String?
+  razorpayPayId   String?
+  razorpaySignature String?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+}
+
+// ==================== REVIEWS ====================
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String?
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images  ReviewImage[]
+  replies ReviewReply[]
+
+  @@unique([userId, productId])
+}
+
+model ReviewImage {
+  id        String @id @default(cuid())
+  reviewId  String
+  review    Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  url       String
+}
+
+model ReviewReply {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String
+  comment   String
+  createdAt DateTime @default(now())
+}
+
+// ==================== DELIVERY ====================
+
+model DeliveryPartner {
+  id            String         @id @default(cuid())
+  userId        String         @unique
+  fullName      String
+  phone         String
+  email         String
+  address       String
+  aadhaar       String
+  license       String
+  vehicleType   String
+  vehicleNumber String
+  selfieUrl     String?
+  vehiclePhoto  String?
+  feePaid       Boolean        @default(false)
+  status        DeliveryStatus @default(PENDING)
+  createdAt     DateTime       @default(now())
+}
+
+// ==================== AUDIT ====================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ip        String?
+  createdAt DateTime @default(now())
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+// ==================== COUPONS ====================
+
+model Coupon {
+  id          String   @id @default(cuid())
+  shopId      String
+  code        String
+  type        String   @default("PERCENT") // PERCENT | FLAT
+  value       Int
+  minOrder    Int      @default(0)
+  maxDiscount Int?
+  usageLimit  Int      @default(100)
+  usedCount   Int      @default(0)
+  active      Boolean  @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@unique([shopId, code])
+}
